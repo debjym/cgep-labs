@@ -1,0 +1,9 @@
+# Terraform working files (never publish these)
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+crash.log
+
+# OS noise
+.DS_Store
