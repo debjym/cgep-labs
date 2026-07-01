@@ -1,0 +1,31 @@
+policies\tests\ac3_no_public_test.rego:28:
+data.compliance.ac3_test.test_compliant_bucket_passes: PASS (7.2104ms)
+
+policies\tests\cm6_required_tags_test.rego:24:
+data.compliance.cm6_test.test_complete_passes: PASS (7.2104ms)
+
+policies\tests\ac3_no_public_test.rego:35:
+data.compliance.ac3_test.test_open_management_port_fails: PASS (6.037ms)
+policies\tests\ac3_no_public_test.rego:30:
+data.compliance.ac3_test.test_public_bucket_fails: PASS (6.5597ms)
+
+policies\tests\sc28_encryption_test.rego:23:
+data.compliance.sc28_test.test_noncompliant_fails: PASS (7.7331ms)
+policies\tests\sc28_encryption_test.rego:21:
+data.compliance.sc28_test.test_compliant_passes: PASS (6.5597ms)
+
+policies\tests\cm6_required_tags_test.rego:26:
+data.compliance.cm6_test.test_partial_fails: PASS (8.771ms)
+policies\tests\cm6_required_tags_test.rego:31:
+data.compliance.cm6_test.test_no_labels_fail: PASS (8.1204ms)
+--------------------------------------------------------------------------------
+PASS: 8/8
+
+=== opa eval: SC-28 deny ===
+[]
+
+=== opa eval: AC-3 deny ===
+[]
+
+=== opa eval: CM-6 deny ===
+[]
