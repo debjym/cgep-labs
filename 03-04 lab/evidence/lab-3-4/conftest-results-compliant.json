@@ -1,0 +1,30 @@
+[
+[
+	{
+		"filename": "terraform/plan.json",
+		"namespace": "compliance.sc28_aws",
+		"successes": 1
+	}
+]
+,[
+	{
+		"filename": "terraform/plan.json",
+		"namespace": "compliance.ac3_aws",
+		"successes": 1
+	}
+]
+,[
+	{
+		"filename": "terraform/plan.json",
+		"namespace": "compliance.cm6_aws",
+		"successes": 1
+	}
+]
+,[
+	{
+		"filename": "terraform/plan.json",
+		"namespace": "compliance.cm6",
+		"successes": 1
+	}
+]
+]
