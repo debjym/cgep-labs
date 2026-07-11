@@ -202,6 +202,28 @@ Evidence artifact from the passing run: `grc-evidence-29171631129`, containing `
 
 ---
 
+## The NIST control story: what actually got proven, and how the evidence is protected
+
+NIST 800-53 controls split into two flavors that matter here. The first flavor is controls *on the system itself* — SC-28 (encryption at rest), AC-3 (access enforcement), CM-6 (configuration settings) — the things Lab 3.3/3.4's Rego policies actually check line by line against a Terraform plan. The second flavor is controls *on the process that assures the first flavor is actually in effect* — CM-3, CA-2, RA-5, AU-9. Lab 3.4 built the first kind. This lab builds the second kind around it, and the difference between the two is the whole reason this lab exists: a policy that only runs when someone remembers to run it isn't a control, it's a suggestion.
+
+**CM-3 — Configuration Change Control.** The pipeline triggers on `pull_request`, not on a schedule or by hand. CM-3 requires changes to be controlled *before* they land, not audited afterward — every proposed change to `terraform/primitives/compliant-s3` is planned, scanned, and gated before anyone can merge it. Right now that gate is advisory: nothing on GitHub actually stops a red PR from being merged. That's the one open item in this lab (see "Still open" above) — turning the `evidence` job into a required branch-protection check is what converts "the pipeline reported failure" into "the merge button is disabled." Until then, CM-3 is implemented but not yet enforced.
+
+**CM-6 — Configuration Settings.** The required-tags, encryption, and public-access-block checks inherited from Lab 3.3/3.4 are the configuration baseline. This lab doesn't add a new baseline — it makes sure the existing one gets checked on *every* proposed change, not just the one the original author happened to test on their own laptop. Run 3 on PR #1 proved this isn't theoretical: the same AWS-variant policies that validated the primitive back in Lab 3.4 validated it again here, automatically, with nobody re-running `conftest test` by hand.
+
+**CA-2 — Control Assessments.** This is the control this lab actually demonstrated live, not just in theory. An assessment that never fails isn't assessing anything — it's decoration. This one failed twice, for two different real reasons: the `environment` variable violated its own validation rule (the assessment caught a genuine defect in the *pipeline*, not the infrastructure), and tfsec caught a real, if deliberately deferred, gap in the *infrastructure* itself. Both failures are CA-2 doing its job.
+
+**RA-5 — Vulnerability Scanning.** tfsec is the RA-5 control here — infrastructure-as-code misconfiguration scanning, failing closed above the HIGH severity threshold. The KMS finding from run 29171522863 is the artifact of RA-5 actually working: it's now a documented, dated, reasoned exception (`#tfsec:ignore:aws-s3-encryption-customer-key`, see Step 6 above) rather than a silently ignored gap or a globally lowered threshold. That distinction — one narrow, reasoned exception vs. a weakened gate for everyone — is what keeps RA-5 meaningful instead of theatrical.
+
+**AU-9 — Protection of Audit Information.** This is the control the evidence artifact exists to satisfy. Three properties make `grc-evidence-<run-id>` defensible as audit evidence rather than just a log file nobody will ever open again:
+
+1. **Uniquely named per run** — `grc-evidence-29171631129`, not `grc-evidence-latest`. Nothing overwrites a prior run's record; every PR's history stays independently retrievable.
+2. **Captured on failure, not just success** — the `if: always()` steps mean the two *failed* runs (29171473217, 29171522863) have their own evidence bundles too, not only the passing one. An audit trail that only records the good runs isn't a trail — it's a highlight reel.
+3. **Tied to an immutable run** — the artifact is attached to a specific GitHub Actions run, itself tied to a specific commit SHA at a specific point in the PR's history. Nobody edits a completed workflow run after the fact; the record and the commit that produced it move together, permanently.
+
+The story this lab actually tells, end to end: a policy library built in Lab 3.4 got wired into a place where it runs on every change (CM-3), against a documented baseline (CM-6), where the check itself can fail and be trusted when it does (CA-2, RA-5), and where every run — pass or fail — leaves behind a named, tamper-evident record (AU-9). The two real bugs this lab's own pipeline caught on itself, live, are the best evidence that this mapping isn't just labels in a code comment. The controls did something.
+
+---
+
 ## Portfolio checklist
 
 - [x] `terraform/oidc/` applied — OIDC provider + role live in the account (`arn:aws:iam::612063236841:role/github-actions-grc-evidence`)
