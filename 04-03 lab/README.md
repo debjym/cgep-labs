@@ -4,6 +4,29 @@ The local Conftest gate from [Lab 3.4](../03-04%20lab) catches violations on one
 
 ---
 
+## Problem statement
+
+Lab 3.4 proved the Conftest policy gate works — but only on the machine it runs on. Nothing stops a teammate from `terraform apply`-ing a non-compliant change from their own laptop, because the gate isn't enforced anywhere shared. There's also no durable, tamper-evident record that a check ran at all: a local `conftest test` output in someone's terminal isn't evidence anyone else can audit later.
+
+This lab closes both gaps: it moves the gate from "runs on my machine" to "runs on every pull request, for every contributor, against the same policy library," using AWS credentials that never live as a long-lived secret in GitHub, and it produces a named, retrievable evidence artifact for every single run — pass or fail — so the CI run itself becomes the audit trail.
+
+---
+
+## Steps taken (summary)
+
+1. Verified prerequisites against the real repo/AWS state (see table below) rather than assuming the prompt's claims held.
+2. Wrote least-privilege Terraform for the OIDC provider + IAM role (`04-03 lab/terraform/oidc/`), scoped to `repo:debjym/cgep-labs:pull_request` — corrected from the prompt's implicit `ref:refs/heads/main` framing, which doesn't match how GitHub sets the `sub` claim for `pull_request`-triggered runs.
+3. Applied the Terraform for real (`terraform apply`) — confirmed both ARNs live in the account and match the workflow's hardcoded `ROLE_ARN`.
+4. Wrote the workflow (`.github/workflows/grc-evidence-pipeline.yml`): OIDC auth → `terraform plan` → Conftest gate (reusing Lab 3.4's `policy-gate.sh`) → tfsec scan → evidence artifact upload → PR comment → fail-closed exit.
+5. Found and rejected two competing/stray drafts (a broader-permission `ReadOnlyAccess` OIDC role, and a workflow YAML with paths that don't exist in this repo) before they could get committed alongside the real implementation.
+6. Verified third-party Action names and release assets against the GitHub API before trusting them — caught `aquasecurity/setup-tfsec` as a nonexistent action and replaced it with a direct binary install.
+7. Committed, pushed to branch `add-grc-gate`, opened PR #1.
+8. Ran it for real. Run 1 failed on a genuine bug (`environment` value violated the module's own validation). Run 2 failed on a genuine tfsec HIGH finding (SSE-S3 vs customer-managed KMS). Both fixed with real changes, not workarounds — run 3 passed clean.
+9. Documented the tfsec exception with a dated, reasoned inline comment rather than lowering the severity threshold or disabling the check globally.
+10. Left the negative-path (fail-closed) proof and branch-protection required-check setup explicitly open rather than claiming them done — see "Still open" below.
+
+---
+
 ## What this lab teaches
 
 - Wiring AWS OIDC trust to GitHub Actions so the workflow assumes an IAM role without any long-lived key ever touching GitHub
